@@ -32,8 +32,11 @@ public class FefoOptimizationEngine {
     private final DispatchAllocationRepository allocationRepository;
     private final DynamicDiscountEngine discountEngine;
 
-    private static final double HANDLING_COST_PER_KG = 0.50; // INR
-    private static final double DISPOSAL_PENALTY_PER_KG = 3.00; // INR
+    @org.springframework.beans.factory.annotation.Value("${freshroute.economic.handling-cost-per-kg:0.50}")
+    private double handlingCostPerKg;
+
+    @org.springframework.beans.factory.annotation.Value("${freshroute.economic.disposal-penalty-per-kg:3.00}")
+    private double disposalPenaltyPerKg;
 
     private static class CandidateAllocation {
         DestinationMarket market;
@@ -138,7 +141,7 @@ public class FefoOptimizationEngine {
                     double effectivePrice = basePrice * (1.0 - discountPct);
                     double freight = route.getFreightCostPerKg();
                     double procurement = lockedBatch.getProcurementCostPerKg();
-                    double netMargin = effectivePrice - freight - HANDLING_COST_PER_KG - procurement;
+                    double netMargin = effectivePrice - freight - handlingCostPerKg - procurement;
 
                     CandidateAllocation candidate = new CandidateAllocation();
                     candidate.market = market;
@@ -181,7 +184,7 @@ public class FefoOptimizationEngine {
                 double effectiveRev = allocQty * best.effectivePrice;
                 double discountValue = grossRev - effectiveRev;
                 double freight = allocQty * best.freightCost;
-                double handling = allocQty * HANDLING_COST_PER_KG;
+                double handling = allocQty * handlingCostPerKg;
                 double procurement = allocQty * lockedBatch.getProcurementCostPerKg();
                 double netProfit = effectiveRev - freight - handling - procurement;
 
@@ -195,7 +198,7 @@ public class FefoOptimizationEngine {
                         .discountPercentage(best.discountPercent * 100.0)
                         .effectivePricePerKg(best.effectivePrice)
                         .freightCostPerKg(best.freightCost)
-                        .handlingCostPerKg(HANDLING_COST_PER_KG)
+                        .handlingCostPerKg(handlingCostPerKg)
                         .procurementCostPerKg(lockedBatch.getProcurementCostPerKg())
                         .netMarginPerKg(best.netMarginPerKg)
                         .totalGrossRevenue(grossRev)
@@ -243,7 +246,7 @@ public class FefoOptimizationEngine {
             // If remaining quantity cannot be dispatched feasibly, record as spoilage
             if (batchRemQty > 0.01) {
                 totalSpoiledKg += batchRemQty;
-                double loss = batchRemQty * (lockedBatch.getProcurementCostPerKg() + DISPOSAL_PENALTY_PER_KG);
+                double loss = batchRemQty * (lockedBatch.getProcurementCostPerKg() + disposalPenaltyPerKg);
                 totalSpoilageLoss += loss;
                 totalProcurementCost += batchRemQty * lockedBatch.getProcurementCostPerKg();
                 lockedBatch.setStatus(BatchStatus.SPOILED);

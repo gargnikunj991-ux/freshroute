@@ -1,3 +1,9 @@
+# Environment Variables (NEVER commit secrets or live env)
+.env
+.env.*
+*.env
+!.env.example
+
 # Java / Maven
 target/
 *.class

@@ -29,7 +29,8 @@ public class DisruptionEngine {
     private final DestinationMarketRepository marketRepository;
     private final TransportRouteRepository routeRepository;
 
-    private static final double Q10_COEFFICIENT = 2.2; // Arrhenius food decay empirical constant
+    @org.springframework.beans.factory.annotation.Value("${freshroute.economic.q10-coefficient:2.2}")
+    private double q10Coefficient;
 
     @Transactional
     public DisruptionResultDto simulateDisruption(DisruptionRequest request) {
@@ -97,7 +98,7 @@ public class DisruptionEngine {
 
     private DisruptionResultDto simulateTemperatureSpike(double tempSpikeCelsius) {
         // Arrhenius biochemical decay acceleration
-        double decayFactor = Math.pow(Q10_COEFFICIENT, tempSpikeCelsius / 10.0);
+        double decayFactor = Math.pow(q10Coefficient, tempSpikeCelsius / 10.0);
 
         List<ProduceBatch> batches = batchRepository.findAll();
         List<ReallocationDto> reallocations = new ArrayList<>();

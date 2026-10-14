@@ -118,16 +118,3 @@ npm install
 npm run dev
 ```
 - Frontend runs on: `http://localhost:5173`
-
----
-
-## 🎤 2-Minute Winning Judge Pitch Script
-
-1. **The Hook (30s):**  
-   *"Post-harvest food loss costs India ₹1.5 lakh crore every year according to MoFPI. Why? Because distribution hubs still use naive FIFO without factoring in shelf-life decay or transit delays. FreshRoute changes this with automated, profit-optimizing decision intelligence."*
-
-2. **The Tech & Proof (60s):**  
-   *"We built FreshRoute with Java 21, Spring Boot 3, and React. On our dashboard, you can see live batch decay rates. When we execute the optimization, our FEFO engine evaluates transit times, market spot prices, and dynamic discounts. Compared to the baseline FIFO strategy, FreshRoute achieves a **42% reduction in spoilage** and **+₹1.25 Lakhs net profit increase** on this single batch cycle."*
-
-3. **The Resilience & Disruption (30s):**  
-   *"Watch our Disruption Studio: when a 6-hour highway delay hits, FreshRoute doesn't let produce rot. It instantly re-routes vulnerable tomatoes to local food processors at an automated 25% discount, preserving cash and eliminating waste. Everything is fully verifiable through our Swagger API."*

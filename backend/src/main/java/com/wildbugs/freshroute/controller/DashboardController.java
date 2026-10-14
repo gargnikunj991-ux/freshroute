@@ -2,29 +2,36 @@ package com.wildbugs.freshroute.controller;
 
 import com.wildbugs.freshroute.dto.BaselineComparisonDto;
 import com.wildbugs.freshroute.dto.BatchDto;
+import com.wildbugs.freshroute.dto.CreateBatchRequest;
 import com.wildbugs.freshroute.dto.DashboardOverviewDto;
+import com.wildbugs.freshroute.model.DestinationMarket;
 import com.wildbugs.freshroute.model.ProduceBatch;
+import com.wildbugs.freshroute.model.TransportRoute;
+import com.wildbugs.freshroute.model.enums.BatchStatus;
 import com.wildbugs.freshroute.repository.DestinationMarketRepository;
 import com.wildbugs.freshroute.repository.ProduceBatchRepository;
+import com.wildbugs.freshroute.repository.TransportRouteRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
-@Tag(name = "Dashboard & Inventory Feed", description = "Endpoints for executive metrics and real-time perishable inventory")
+@Tag(name = "Dashboard & Inventory Feed", description = "Endpoints for executive metrics, perishable batches, and corridor topology")
 public class DashboardController {
 
     private final ProduceBatchRepository batchRepository;
     private final DestinationMarketRepository marketRepository;
+    private final TransportRouteRepository routeRepository;
     private final AllocationController allocationController;
 
     @GetMapping("/overview")
@@ -54,12 +61,51 @@ public class DashboardController {
     }
 
     @GetMapping("/batches")
-    @Operation(summary = "Get Active Perishable Batches in FEFO Order",
+    @Operation(summary = "Get Perishable Batches in FEFO Order",
                description = "Returns all inventory batches sorted by remaining shelf life with computed urgency indices and risk ratings.")
     public ResponseEntity<List<BatchDto>> getBatches() {
-        List<ProduceBatch> batches = batchRepository.findAllActiveFefoOrder();
+        List<ProduceBatch> batches = batchRepository.findAll();
+        batches.sort((b1, b2) -> Double.compare(b1.getRemainingShelfLifeHours(), b2.getRemainingShelfLifeHours()));
         List<BatchDto> dtos = batches.stream().map(this::mapToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping("/batches")
+    @Operation(summary = "Create Custom Produce Batch (Live Demo Injection)",
+               description = "Allows operators or judges to register a custom perishable batch into warehouse inventory in real time.")
+    public ResponseEntity<BatchDto> createBatch(@Valid @RequestBody CreateBatchRequest request) {
+        ProduceBatch batch = ProduceBatch.builder()
+                .batchCode(request.getBatchCode().trim().toUpperCase())
+                .variety(request.getVariety() != null ? request.getVariety() : "Standard Variety")
+                .commodity(request.getCommodity())
+                .category(request.getCategory())
+                .initialQuantityKg(request.getQuantityKg())
+                .remainingQuantityKg(request.getQuantityKg())
+                .initialShelfLifeHours(request.getRemainingShelfLifeHours())
+                .remainingShelfLifeHours(request.getRemainingShelfLifeHours())
+                .procurementCostPerKg(request.getProcurementCostPerKg())
+                .currentTemperatureCelsius(request.getCurrentTemperatureCelsius() != null ? request.getCurrentTemperatureCelsius() : 12.0)
+                .status(BatchStatus.AVAILABLE)
+                .harvestTimestamp(Instant.now())
+                .originHub(request.getOriginHub() != null ? request.getOriginHub() : "Nashik Cold Logistics Hub")
+                .build();
+
+        ProduceBatch saved = batchRepository.save(batch);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapToDto(saved));
+    }
+
+    @GetMapping("/markets")
+    @Operation(summary = "Get All Destination Markets",
+               description = "Returns all destination clusters (APMC mandis, retail supermarkets, food processors) with demand and spot prices.")
+    public ResponseEntity<List<DestinationMarket>> getMarkets() {
+        return ResponseEntity.ok(marketRepository.findAll());
+    }
+
+    @GetMapping("/routes")
+    @Operation(summary = "Get Active Logistics Corridors",
+               description = "Returns all transport routes, transit hours, freight costs, and vehicle capacities.")
+    public ResponseEntity<List<TransportRoute>> getRoutes() {
+        return ResponseEntity.ok(routeRepository.findAll());
     }
 
     private BatchDto mapToDto(ProduceBatch b) {

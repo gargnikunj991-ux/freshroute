@@ -24,8 +24,11 @@ public class BaselineFifoEngine {
     private final DestinationMarketRepository marketRepository;
     private final TransportRouteRepository routeRepository;
 
-    private static final double HANDLING_COST_PER_KG = 0.50; // INR
-    private static final double DISPOSAL_PENALTY_PER_KG = 3.00; // INR
+    @org.springframework.beans.factory.annotation.Value("${freshroute.economic.handling-cost-per-kg:0.50}")
+    private double handlingCostPerKg;
+
+    @org.springframework.beans.factory.annotation.Value("${freshroute.economic.disposal-penalty-per-kg:3.00}")
+    private double disposalPenaltyPerKg;
 
     public OptimizationResultDto runBaselineFifoSimulation() {
         List<ProduceBatch> batches = batchRepository.findAllActiveFifoOrder();
@@ -84,13 +87,13 @@ public class BaselineFifoEngine {
                 double basePrice = market.getPriceFor(comm);
                 double freight = route.getFreightCostPerKg();
                 double procurement = batch.getProcurementCostPerKg();
-                double handling = HANDLING_COST_PER_KG;
+                double handling = handlingCostPerKg;
 
                 if (isRejected) {
                     feasibilityViolations++;
                     totalSpoiledKg += allocQty;
                     // Spoilage economic loss = procurement basis + freight + disposal penalty
-                    double loss = allocQty * (procurement + freight + DISPOSAL_PENALTY_PER_KG);
+                    double loss = allocQty * (procurement + freight + disposalPenaltyPerKg);
                     totalSpoilageLoss += loss;
                     totalFreightCost += allocQty * freight;
                     totalProcurementCost += allocQty * procurement;
@@ -108,7 +111,7 @@ public class BaselineFifoEngine {
                             .discountPercentage(0.0)
                             .effectivePricePerKg(0.0)
                             .freightCostPerKg(freight)
-                            .netMarginPerKg(-(procurement + freight + DISPOSAL_PENALTY_PER_KG))
+                            .netMarginPerKg(-(procurement + freight + disposalPenaltyPerKg))
                             .totalNetProfit(-loss)
                             .transitTimeHours(transitHours)
                             .remainingShelfLifeOnArrivalHours(arrivalRsl)
@@ -154,7 +157,7 @@ public class BaselineFifoEngine {
             // Any unallocated batch quantity spoils in warehouse
             if (batchRemQty > 0) {
                 totalSpoiledKg += batchRemQty;
-                double warehouseLoss = batchRemQty * (batch.getProcurementCostPerKg() + DISPOSAL_PENALTY_PER_KG);
+                double warehouseLoss = batchRemQty * (batch.getProcurementCostPerKg() + disposalPenaltyPerKg);
                 totalSpoilageLoss += warehouseLoss;
                 totalProcurementCost += batchRemQty * batch.getProcurementCostPerKg();
             }
