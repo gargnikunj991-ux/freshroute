@@ -1,4 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+let rawBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1').trim();
+rawBase = rawBase.replace(/\/+$/, '');
+if (!rawBase.endsWith('/api/v1')) {
+  rawBase = `${rawBase}/api/v1`;
+}
+export const API_BASE = rawBase;
+export const SWAGGER_URL = `${rawBase.replace(/\/api\/v1$/, '')}/swagger-ui/index.html`;
 
 async function handleResponse(response) {
   if (!response.ok) {

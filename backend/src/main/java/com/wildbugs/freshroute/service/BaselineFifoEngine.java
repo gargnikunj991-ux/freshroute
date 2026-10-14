@@ -5,6 +5,7 @@ import com.wildbugs.freshroute.dto.OptimizationResultDto;
 import com.wildbugs.freshroute.model.DestinationMarket;
 import com.wildbugs.freshroute.model.ProduceBatch;
 import com.wildbugs.freshroute.model.TransportRoute;
+import com.wildbugs.freshroute.model.enums.BatchStatus;
 import com.wildbugs.freshroute.model.enums.Commodity;
 import com.wildbugs.freshroute.repository.DestinationMarketRepository;
 import com.wildbugs.freshroute.repository.ProduceBatchRepository;
@@ -31,6 +32,16 @@ public class BaselineFifoEngine {
     private double disposalPenaltyPerKg;
 
     public OptimizationResultDto runBaselineFifoSimulation() {
+        // Reset batches for baseline evaluation so baseline evaluates against full initial inventory
+        List<ProduceBatch> allBatches = batchRepository.findAll();
+        for (ProduceBatch b : allBatches) {
+            b.setRemainingQuantityKg(b.getInitialQuantityKg());
+            if (b.getRemainingShelfLifeHours() > 0) {
+                b.setStatus(BatchStatus.AVAILABLE);
+            }
+        }
+        batchRepository.saveAll(allBatches);
+
         List<ProduceBatch> batches = batchRepository.findAllActiveFifoOrder();
         List<DestinationMarket> markets = marketRepository.findAll();
         List<TransportRoute> routes = routeRepository.findAll();

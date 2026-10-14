@@ -41,7 +41,7 @@ public class DashboardController {
         List<ProduceBatch> batches = batchRepository.findAll();
         List<BatchDto> batchDtos = batches.stream().map(this::mapToDto).collect(Collectors.toList());
 
-        double totalInventoryKg = batches.stream().mapToDouble(ProduceBatch::getRemainingQuantityKg).sum();
+        double totalInventoryKg = batches.stream().mapToDouble(ProduceBatch::getInitialQuantityKg).sum();
         double avgRsl = batches.stream().mapToDouble(ProduceBatch::getRemainingShelfLifeHours).average().orElse(0.0);
         int highRiskCount = (int) batches.stream().filter(b -> b.getRemainingShelfLifeHours() <= 24.0).count();
 

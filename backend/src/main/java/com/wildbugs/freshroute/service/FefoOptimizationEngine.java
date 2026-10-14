@@ -57,6 +57,16 @@ public class FefoOptimizationEngine {
         // Clear previous FreshRoute allocations
         allocationRepository.deleteByPlanType("FRESHROUTE_FEFO");
 
+        // Reset batch remaining quantities to initial quantities for fresh cycle
+        List<ProduceBatch> allBatches = batchRepository.findAll();
+        for (ProduceBatch b : allBatches) {
+            b.setRemainingQuantityKg(b.getInitialQuantityKg());
+            if (b.getRemainingShelfLifeHours() > 0) {
+                b.setStatus(BatchStatus.AVAILABLE);
+            }
+        }
+        batchRepository.saveAll(allBatches);
+
         // 1. Fetch batches in FEFO order (lowest RSL first)
         List<ProduceBatch> batches = batchRepository.findAllActiveFefoOrder();
         List<DestinationMarket> markets = marketRepository.findAll();

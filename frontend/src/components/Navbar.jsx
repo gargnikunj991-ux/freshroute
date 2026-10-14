@@ -1,5 +1,6 @@
 import React from 'react';
 import { Leaf, Database, ExternalLink, RotateCcw, Plus, Activity } from 'lucide-react';
+import { SWAGGER_URL } from '../api';
 
 export default function Navbar({ onReset, onOpenAddModal, isOptimizing }) {
   return (
@@ -35,7 +36,7 @@ export default function Navbar({ onReset, onOpenAddModal, isOptimizing }) {
 
           {/* Swagger Link */}
           <a
-            href="http://localhost:8080/swagger-ui/index.html"
+            href={SWAGGER_URL}
             target="_blank"
             rel="noreferrer"
             className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition"
